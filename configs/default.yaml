@@ -1,0 +1,47 @@
+# global configs
+lidar: VLP
+log_to_file: false
+log_path: /data/log/oh_my_loam
+vis: true
+save_map_path: /home/yuhao/oh_my_loam.pcd
+
+# configs for extractor
+extractor_config:
+  vis: false
+  verbose: false
+  min_point_num: 66
+  scan_seg_num: 12
+  sharp_corner_point_num: 1
+  corner_point_num: 10
+  flat_surf_point_num: 2
+  corner_point_curvature_th: 0.5
+  surf_point_curvature_th: 0.5
+  neighbor_point_dist_sq_th: 0.1
+  downsample_voxel_size: 0.6
+
+# configs for odometer
+odometer_config:
+  vis: false
+  verbose: false
+  nearby_scan_num: 1
+  min_correspondence_num: 10
+  icp_iter_num: 4
+  solve_iter_num: 4
+  corn_match_dist_sq_th: 16.0
+  surf_match_dist_sq_th: 16.0
+
+# configs for mapper
+mapper_config:
+  vis: false
+  verbose: false
+  map_shape: [5, 21, 21]
+  map_step: 50
+  submap_shape: [1, 5, 5]
+  icp_iter_num: 2
+  solve_iter_num: 4
+  min_correspondence_num: 10
+  nearest_neighbor_k: 5
+  neighbor_point_dist_sq_th: 1.0
+  min_line_fit_score: 2
+  min_plane_fit_score: 2
+  downsample_voxel_size: 0.6
