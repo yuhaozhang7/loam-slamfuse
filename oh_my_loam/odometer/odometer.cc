@@ -76,6 +76,7 @@ void Odometer::Process(double timestamp, const std::vector<Feature> &features,
 
 void Odometer::MatchCorn(const TPointCloud &src,
                          std::vector<PointLinePair> *const pairs) const {
+  if (kdtree_corn_.getInputCloud() == nullptr) return;
   if (kdtree_corn_.getInputCloud()->empty()) return;
   double dist_sq_thresh = config_["corn_match_dist_sq_th"].as<double>();
   for (const auto &pt : src) {
@@ -99,6 +100,7 @@ void Odometer::MatchCorn(const TPointCloud &src,
     for (int i = i_begin; i < i_end; ++i) {
       if (i == pt1_scan_id) continue;
       const auto &kdtree = kdtrees_scan_corn_[i];
+      if (kdtree.getInputCloud() == nullptr) continue;
       if (kdtree.getInputCloud()->empty()) continue;
       if (kdtree.nearestKSearch(query_pt, 1, indices, dists) < 1) {
         continue;
@@ -117,6 +119,7 @@ void Odometer::MatchCorn(const TPointCloud &src,
 
 void Odometer::MatchSurf(const TPointCloud &src,
                          std::vector<PointPlanePair> *const pairs) const {
+  if (kdtree_surf_.getInputCloud() == nullptr) return;
   if (kdtree_surf_.getInputCloud()->empty()) return;
   double dist_sq_thresh = config_["surf_match_dist_sq_th"].as<double>();
   for (const auto &pt : src) {
@@ -140,6 +143,7 @@ void Odometer::MatchSurf(const TPointCloud &src,
     for (int i = i_begin; i < i_end; ++i) {
       if (i == pt1_scan_id) continue;
       const auto &kdtree = kdtrees_scan_surf_[i];
+      if (kdtree.getInputCloud() == nullptr) continue;
       if (kdtree.getInputCloud()->empty()) continue;
       if (kdtree.nearestKSearch(query_pt, 1, indices, dists) < 1) {
         continue;
@@ -153,6 +157,7 @@ void Odometer::MatchSurf(const TPointCloud &src,
     if (!pt2_fount) continue;
 
     const auto &kdtree = kdtrees_scan_surf_[pt1_scan_id];
+    if (kdtree.getInputCloud() == nullptr) continue;
     if (kdtree.getInputCloud()->empty()) continue;
     if (kdtree.nearestKSearch(query_pt, 2, indices, dists) < 2) continue;
     if (dists[1] >= dist_sq_thresh) continue;

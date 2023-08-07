@@ -113,6 +113,7 @@ void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
 void Mapper::MatchCorn(const TPointCloudConstPtr &cloud_curr,
                        const common::Pose3d &pose_curr2map,
                        std::vector<PointLineCoeffPair> *const pairs) const {
+  if (kdtree_corn_.getInputCloud() == nullptr) return;
   if (kdtree_corn_.getInputCloud()->empty()) return;
   std::vector<int> indices;
   std::vector<float> dists;
@@ -138,6 +139,7 @@ void Mapper::MatchCorn(const TPointCloudConstPtr &cloud_curr,
 void Mapper::MatchSurf(const TPointCloudConstPtr &cloud_curr,
                        const common::Pose3d &pose_curr2map,
                        std::vector<PointPlaneCoeffPair> *const pairs) const {
+  if (kdtree_corn_.getInputCloud() == nullptr) return;
   if (kdtree_surf_.getInputCloud()->empty()) return;
   std::vector<int> indices;
   std::vector<float> dists;
