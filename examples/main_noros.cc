@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
   // load point cloud and process
   for (auto &path : cloud_paths) {
     PointCloudPtr cloud(new PointCloud);
+    AINFO << path.string();
     pcl::io::loadPCDFile(path.string(), *cloud);
     PointCloudHandler(cloud, &slam);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));  // 10 Hz
@@ -63,5 +64,6 @@ void PointCloudHandler(const PointCloudConstPtr &cloud, OhMyLoam *const slam) {
   AINFO << "Ohmyloam: frame_id = " << ++frame_id
         << ", timestamp = " << FMT_TIMESTAMP(timestamp)
         << ", point_number = " << cloud->size();
-  slam->Run(timestamp, cloud);
+  common::Pose3d tmp_pose;
+  slam->Run(timestamp, cloud, &tmp_pose);
 }

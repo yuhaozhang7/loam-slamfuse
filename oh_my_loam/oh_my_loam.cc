@@ -45,7 +45,8 @@ void OhMyLoam::Reset() {
 }
 
 void OhMyLoam::Run(double timestamp,
-                   const common::PointCloudConstPtr &cloud_in) {
+                   const common::PointCloudConstPtr &cloud_in,
+                   common::Pose3d *const pose_ptr) {
   common::PointCloudPtr cloud(new common::PointCloud);
   RemoveOutliers(*cloud_in, cloud.get());
   std::vector<Feature> features;
@@ -60,6 +61,8 @@ void OhMyLoam::Run(double timestamp,
   if (is_vis_) {
     Visualize(pose_curr2map, cloud_corn, cloud_surf, timestamp);
   }
+  *pose_ptr = pose_curr2map;
+  cloud = nullptr;
 }
 
 void OhMyLoam::Visualize(const common::Pose3d &pose_curr2map,

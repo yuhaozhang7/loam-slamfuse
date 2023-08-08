@@ -46,11 +46,13 @@ void Mapper::Process(double timestamp, const TPointCloudConstPtr &cloud_corn,
     AINFO << "Mapper initialized...";
     return;
   }
+  AINFO << "LINE 49 OK";
   if (GetState() == DONE) {
     thread_.reset(new std::thread(&Mapper::Run, this, cloud_corn, cloud_surf,
                                   pose_curr2odom));
     if (thread_->joinable()) thread_->detach();
   }
+  AINFO << "LINE 55 OK";
   std::lock_guard<std::mutex> lock(state_mutex_);
   *pose_curr2map = pose_odom2map_ * pose_curr2odom;
   AINFO << "Pose_curr2map = " << pose_curr2map->ToString();

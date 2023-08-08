@@ -16,7 +16,7 @@ class OhMyLoam {
 
   bool Init();
 
-  void Run(double timestamp, const common::PointCloudConstPtr &cloud_in);
+  void Run(double timestamp, const common::PointCloudConstPtr &cloud_in, common::Pose3d *const pose_ptr);
 
  private:
   void Reset();
