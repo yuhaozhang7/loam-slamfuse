@@ -104,18 +104,27 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
 bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAMFrame *s) {
 
 	if (s->FrameSensor == lidar_sensor) {
-        /*
+
+        char* data = (char*)s->GetData();
+        uint32_t count = *(uint32_t*)data;
+        float *fdata = (float*)(data+4);
+
         cloud = common::PointCloudPtr(new common::PointCloud);
-        
-        int num_points = s->GetSize() / (sizeof(float) * 3);
-        cloud->points.resize(num_points);
-        cloud->width = num_points;
+
+        for(uint32_t i = 0; i < count; ++i) {
+            float x = fdata[i*3];
+            float y = fdata[i*3+1];
+            float z = fdata[i*3+2];
+            common::Point point;
+            point.x = x;
+            point.y = y;
+            point.z = z;
+            cloud->points.push_back(point);
+        }
+        cloud->width = cloud->points.size();
         cloud->height = 1;
-        cloud->is_dense = false; // If your cloud might have NaN values
         
-        memcpy(cloud->points.data(), s->GetData(), s->GetSize());
-        */
-        
+        /*
         cloud = common::PointCloudPtr(new common::PointCloud);
         std::stringstream tmp_filename;
         tmp_filename << std::setw(10) << std::setfill('0') << frame_id;
@@ -124,6 +133,7 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         std::cout << lidar_file_pcd << std::endl;
 
         pcl::io::loadPCDFile(lidar_file_pcd, *cloud);
+        */
         
         return true;
 	}
