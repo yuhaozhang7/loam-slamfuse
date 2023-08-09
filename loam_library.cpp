@@ -11,6 +11,7 @@
 #include <SLAMBenchAPI.h>
 #include <io/SLAMFrame.h>
 #include <io/sensor/LidarSensor.h>
+#include <io/sensor/CameraSensor.h>
 #include <io/sensor/GroundTruthSensor.h>
 #include <chrono>
 #include <Eigen/Eigen>
@@ -29,17 +30,13 @@
 
 // Default Parameters
 const std::string default_lidar_name = "VLP";
+// TODO: change the path to fit Docker
 const std::string default_yaml_path = "/home/yuhao/loam/configs/default.yaml";
-const std::string default_log_path = "/data/log/oh_my_loam";
-const std::string dirname = "/mnt/d/Download/Dataset/Kitti/2011_09_26/2011_09_26_drive_0005_sync/velodyne_points/pcd/";
-static int lidar_cout = 0;
-const bool default_log_to_file = false;
+const std::string dirname = "/mnt/d/Download/Dataset/Kitti/2011_09_30/2011_09_30_drive_0027_sync/velodyne_points/pcd/";
 
 // Parameters
 std::string lidar_name;
 std::string yaml_path;
-std::string log_path;
-bool log_to_file;
 
 // Sensors
 slambench::io::LidarSensor *lidar_sensor;
@@ -50,18 +47,16 @@ slambench::outputs::Output *pointcloud_output;
 slambench::outputs::Output *track_frame_output;
 
 // System
-// oh_my_loam::OhMyLoam *loam;
 static oh_my_loam::OhMyLoam loam;
-// common::PointCloudPtr cloud;
+common::PointCloudPtr cloud;
 Eigen::Matrix4f pose;
+static size_t frame_id = 0;
 
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
 
     slam_settings->addParameter(TypedParameter<std::string>("", "lidar-name", "name of lidar sensor", &lidar_name, &default_lidar_name));
     slam_settings->addParameter(TypedParameter<std::string>("", "configuration", "path to configuration YAML file", &yaml_path, &default_yaml_path));
-    slam_settings->addParameter(TypedParameter<std::string>("", "log-path", "path to log file", &log_path, &default_log_path));
-    slam_settings->addParameter(TypedParameter<bool>("", "log-to-file", "log to file or not", &log_to_file, &default_log_to_file));
 
     return true;
 }
@@ -95,8 +90,7 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     bool is_log_to_file = common::YAMLConfig::Instance()->Get<bool>("log_to_file");
     std::string log_path = common::YAMLConfig::Instance()->Get<std::string>("log_path");
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
-    // logging
-    common::InitG3Logging(is_log_to_file, "oh_my_loam_" + lidar, log_path);
+
     if (!loam.Init()) {
         std::cerr << "Failed to initilize slam system." << std::endl;
     }
@@ -122,17 +116,14 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         memcpy(cloud->points.data(), s->GetData(), s->GetSize());
         */
         
-        /*
         cloud = common::PointCloudPtr(new common::PointCloud);
         std::stringstream tmp_filename;
-        tmp_filename << std::setw(10) << std::setfill('0') << lidar_cout;
+        tmp_filename << std::setw(10) << std::setfill('0') << frame_id;
         std::string lidar_file_pcd = tmp_filename.str() + ".pcd";
         lidar_file_pcd = dirname + lidar_file_pcd;
-        lidar_cout++;
+        std::cout << lidar_file_pcd << std::endl;
 
         pcl::io::loadPCDFile(lidar_file_pcd, *cloud);
-        */
-        
         
         return true;
 	}
@@ -141,37 +132,18 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
 }
 
 
-Eigen::Matrix4f PointCloudHandler(const common::PointCloudConstPtr &cloud, oh_my_loam::OhMyLoam *const slam) {
+bool sb_process_once(SLAMBenchLibraryHelper *slam_settings) {
+    
     auto millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch());
     double timestamp = millisecs.count() / 1000.0;
-    static size_t frame_id = 0;
-    AINFO << "Ohmyloam: frame_id = " << ++frame_id
-            << ", timestamp = " << FMT_TIMESTAMP(timestamp)
-            << ", point_number = " << cloud->size();
+    std::cout << "Ohmyloam: frame_id = " << ++frame_id
+              << ", timestamp = " << FMT_TIMESTAMP(timestamp)
+              << ", point_number = " << cloud->size() << std::endl;
+    
     common::Pose3d pose3d;
-    slam->Run(timestamp, cloud, &pose3d);
-    Eigen::Matrix4f pose = pose3d.TransMat().cast<float>();
-    return pose;
-}
-
-
-bool sb_process_once(SLAMBenchLibraryHelper *slam_settings) {
-
-    common::PointCloudPtr cloud(new common::PointCloud);
-    std::stringstream tmp_filename;
-    tmp_filename << std::setw(10) << std::setfill('0') << lidar_cout;
-    std::string lidar_file_pcd = tmp_filename.str() + ".pcd";
-    lidar_file_pcd = dirname + lidar_file_pcd;
-    std::cout << lidar_file_pcd << std::endl;
-    lidar_cout++;
-
-    pcl::io::loadPCDFile(lidar_file_pcd, *cloud);
-
-    pose = PointCloudHandler(cloud, &loam);
-    std::cout << pose << std::endl;
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));  // 10 Hz
+    loam.Run(timestamp, cloud, &pose3d);
+    pose = pose3d.TransMat().cast<float>();
 
     return true;
 }
@@ -193,6 +165,8 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
 bool sb_clean_slam_system() {
     delete pose_output;
+    // delete pointcloud_output;
+    // delete track_frame_output;
     delete lidar_sensor;
     return true;
 }
