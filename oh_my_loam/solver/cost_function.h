@@ -152,7 +152,8 @@ bool PointLineCostFunction::operator()(const T *const r_quat,
   Eigen::Matrix<T, 3, 1> p0 = r * p + t;
 
   // norm of cross product: triangle area x 2
-  Eigen::Matrix<T, 3, 1> area = (p0 - p1).cross(p0 - p2) * 0.5;
+  Eigen::Matrix<T, 3, 1> area = (p0 - p1).cross(p0 - p2) * T(0.5);
+
   T base_length = (p2 - p1).norm();
   residual[0] = area[0] / base_length;
   residual[1] = area[1] / base_length;

@@ -4,7 +4,7 @@
 #include "oh_my_loam/base/feature.h"
 #include "oh_my_loam/base/utils.h"
 #include "oh_my_loam/base/types.h"
-#include "oh_my_loam/visualizer/extractor_visualizer.h"
+// #include "oh_my_loam/visualizer/extractor_visualizer.h"
 
 namespace oh_my_loam {
 
@@ -36,16 +36,17 @@ class Extractor {
 
   virtual void GenerateFeature(const TCTPointCloud &scan,
                                Feature *const feature) const;
-
+  /*
   virtual void Visualize(const common::PointCloudConstPtr &cloud,
                          const std::vector<Feature> &features,
                          double timestamp = 0.0) const;
+  */
 
   int num_scans_ = 0;
 
   YAML::Node config_;
 
-  std::unique_ptr<ExtractorVisualizer> visualizer_{nullptr};
+  // std::unique_ptr<ExtractorVisualizer> visualizer_{nullptr};
 
   bool verbose_ = false;
 

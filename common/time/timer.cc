@@ -1,6 +1,8 @@
 #include "timer.h"
 
-#include "common/log/log.h"
+// #include "common/log/log.h"
+#include <iostream>
+#include <stdexcept>
 
 namespace common {
 
@@ -9,9 +11,11 @@ void Timer::Tic() {
 }
 
 double Timer::Toc(char unit) {
-  ACHECK(unit == 's' || unit == 'm' || unit == 'u')
-      << "Only 's'(second), 'm'(millisecond) and 'u'(microsecond) are "
-         "supported";
+  // ACHECK(unit == 's' || unit == 'm' || unit == 'u')
+  //     << "Only 's'(second), 'm'(millisecond) and 'u'(microsecond) are "
+  //        "supported";
+  if (unit != 's' && unit != 'm' && unit != 'u')
+    throw std::invalid_argument("Only 's'(second), 'm'(millisecond) and 'u'(microsecond) are supported");
   double factor = 1.0;
   if (unit == 'm') factor = 1.0e3;
   if (unit == 'u') factor = 1.0e6;
@@ -23,10 +27,10 @@ double Timer::Toc(char unit) {
 TimerWrapper::~TimerWrapper() {
   double duration = timer_.Toc();
   if (duration_ms_ < 0) {
-    AINFO << msg_ << ": time elapsed: " << FMT_TIMESTAMP(duration) << " ms";
+    std::cout << msg_ << ": time elapsed: " << FMT_TIMESTAMP(duration) << " ms" << std::endl;
   }
   if (duration_ms_ > 0 && duration > duration_ms_) {
-    AWARN << msg_ << ": time elapsed: " << FMT_TIMESTAMP(duration) << " ms";
+    std::cout << msg_ << ": time elapsed: " << FMT_TIMESTAMP(duration) << " ms" << std::endl;
   }
 }
 

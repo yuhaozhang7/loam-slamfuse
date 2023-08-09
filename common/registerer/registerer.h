@@ -3,8 +3,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <iostream>
+#include <stdexcept>
 
-#include "common/log/log.h"
+// #include "common/log/log.h"
 
 namespace common {
 
@@ -47,7 +49,9 @@ class Registerer {
     auto &factory_map = GetFactoryMap<BaseClass>();
     auto iter = factory_map.find(derived_class_name);
     if (iter == factory_map.end()) {
-      AFATAL << "Class not registered: " << derived_class_name << ".";
+      // AFATAL << "Class not registered: " << derived_class_name << ".";
+      std::cerr << "FATAL ERROR - class not registered: " << derived_class_name << "." << std::endl;
+      // throw std::runtime_error("Fatal error occurred");
       return nullptr;
     }
     return iter->second->Create();

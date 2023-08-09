@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include "common/pcl/pcl_types.h"
 
 namespace common {

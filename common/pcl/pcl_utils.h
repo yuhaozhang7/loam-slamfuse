@@ -5,7 +5,7 @@
 #include <pcl/point_cloud.h>
 
 #include "common/geometry/pose3d.h"
-#include "common/log/log.h"
+// #include "common/log/log.h"
 #include "pcl_types.h"
 
 namespace common {

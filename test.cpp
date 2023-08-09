@@ -17,7 +17,7 @@
 #include <chrono>
 #include <filesystem>
 #include <functional>
-#include <thread>
+// #include <thread>
 
 #include "common/common.h"
 #include "oh_my_loam/oh_my_loam.h"
@@ -57,7 +57,7 @@ bool sb_init_slam_system() {
     std::string log_path = common::YAMLConfig::Instance()->Get<std::string>("log_path");
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
     // logging
-    common::InitG3Logging(is_log_to_file, "oh_my_loam_" + lidar, log_path);
+    // common::InitG3Logging(is_log_to_file, "oh_my_loam_" + lidar, log_path);
     if (!loam.Init()) {
         std::cerr << "Failed to initilize slam system." << std::endl;
     }
@@ -78,9 +78,9 @@ Eigen::Matrix4f PointCloudHandler(const common::PointCloudConstPtr &cloud, oh_my
         std::chrono::system_clock::now().time_since_epoch());
     double timestamp = millisecs.count() / 1000.0;
     static size_t frame_id = 0;
-    AINFO << "Ohmyloam: frame_id = " << ++frame_id
-            << ", timestamp = " << FMT_TIMESTAMP(timestamp)
-            << ", point_number = " << cloud->size();
+    std::cout << "Ohmyloam: frame_id = " << ++frame_id
+              << ", timestamp = " << FMT_TIMESTAMP(timestamp)
+              << ", point_number = " << cloud->size() << std::endl;
     common::Pose3d pose3d;
     slam->Run(timestamp, cloud, &pose3d);
     Eigen::Matrix4f pose = pose3d.TransMat().cast<float>();

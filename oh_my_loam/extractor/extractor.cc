@@ -16,8 +16,9 @@ bool Extractor::Init() {
   config_ = config["extractor_config"];
   is_vis_ = config_["vis"].as<bool>();
   verbose_ = config_["verbose"].as<bool>();
-  AINFO << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF");
-  if (is_vis_) visualizer_.reset(new ExtractorVisualizer);
+  // ---AINFO << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF");---
+  std::cout << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
+  // ---if (is_vis_) visualizer_.reset(new ExtractorVisualizer);---
   return true;
 }
 
@@ -26,32 +27,33 @@ void Extractor::Process(double timestamp,
                         std::vector<Feature> *const features) {
   BLOCK_TIMER_START;
   if (cloud->size() < config_["min_point_num"].as<size_t>()) {
-    AWARN << "Too few input points: num = " << cloud->size() << " (< "
-          << config_["min_point_num"].as<int>() << ")";
+    std::cerr << "Too few input points: num = " << cloud->size() << " (< "
+          << config_["min_point_num"].as<int>() << ")" << std::endl;
     return;
   }
   // split point cloud int scans
   std::vector<TCTPointCloud> scans;
   SplitScan(*cloud, &scans);
-  AINFO_IF(verbose_) << "Extractor::SplitScan: " << BLOCK_TIMER_STOP_FMT;
+  // ---AINFO_IF(verbose_) << "Extractor::SplitScan: " << BLOCK_TIMER_STOP_FMT;---
   // compute curvature to each point
   for (auto &scan : scans) {
     ComputeCurvature(&scan);
   }
-  AINFO_IF(verbose_) << "Extractor::ComputeCurvature: " << BLOCK_TIMER_STOP_FMT;
+  // ---AINFO_IF(verbose_) << "Extractor::ComputeCurvature: " << BLOCK_TIMER_STOP_FMT;---
   // assign type to each point: FLAT, LESS_FLAT, NORMAL, LESS_SHARP or SHARP
   for (auto &scan : scans) {
     AssignType(&scan);
   }
-  AINFO_IF(verbose_) << "Extractor::AssignType: " << BLOCK_TIMER_STOP_FMT;
+  // ---AINFO_IF(verbose_) << "Extractor::AssignType: " << BLOCK_TIMER_STOP_FMT;---
   // store points into feature point clouds based on their type
   for (size_t i = 0; i < scans.size(); ++i) {
     Feature feature;
     GenerateFeature(scans[i], &feature);
     features->push_back(std::move(feature));
   }
-  AINFO << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT;
-  if (is_vis_) Visualize(cloud, *features, timestamp);
+  // ---AINFO << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT;---
+  std::cout << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT << std::endl;
+  // ---if (is_vis_) Visualize(cloud, *features, timestamp);---
 }
 
 void Extractor::SplitScan(const common::PointCloud &cloud,
@@ -190,6 +192,7 @@ void Extractor::GenerateFeature(const TCTPointCloud &scan,
   feature->cloud_surf = dowm_sampled;
 }
 
+/*
 void Extractor::Visualize(const common::PointCloudConstPtr &cloud,
                           const std::vector<Feature> &features,
                           double timestamp) const {
@@ -199,6 +202,7 @@ void Extractor::Visualize(const common::PointCloudConstPtr &cloud,
   frame->features = features;
   visualizer_->Render(frame);
 }
+*/
 
 void Extractor::UpdateNeighborsPicked(const TCTPointCloud &scan, int ix,
                                       std::vector<bool> *const picked) const {

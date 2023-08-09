@@ -5,11 +5,17 @@
 namespace oh_my_loam {
 
 Map::Map(const std::vector<int> &shape, const std::vector<double> &step) {
-  ACHECK(shape.size() == 3);
+  // ---ACHECK(shape.size() == 3);---
+  if (!(shape.size() == 3))
+    throw std::invalid_argument("shape.size() is not 3");
   std::copy_n(shape.begin(), 3, shape_);
-  ACHECK(shape_[0] % 2 == 1 && shape_[1] % 2 == 1 && shape_[2] % 2 == 1);
+  // ---ACHECK(shape_[0] % 2 == 1 && shape_[1] % 2 == 1 && shape_[2] % 2 == 1);---
+  if (!(shape_[0] % 2 == 1 && shape_[1] % 2 == 1 && shape_[2] % 2 == 1))
+    throw std::invalid_argument("!(shape_[0] % 2 == 1 && shape_[1] % 2 == 1 && shape_[2] % 2 == 1)");
   std::copy_n(step.begin(), 3, step_);
-  ACHECK(step_[0] > 0.0 && step_[1] > 0.0 && step_[2] > 0.0);
+  // ---ACHECK(step_[0] > 0.0 && step_[1] > 0.0 && step_[2] > 0.0);---
+  if (!(step_[0] > 0.0 && step_[1] > 0.0 && step_[2] > 0.0))
+    throw std::invalid_argument("!(step_[0] > 0.0 && step_[1] > 0.0 && step_[2] > 0.0)");
   center_[0] = shape_[0] / 2;
   center_[1] = shape_[1] / 2;
   center_[2] = shape_[2] / 2;

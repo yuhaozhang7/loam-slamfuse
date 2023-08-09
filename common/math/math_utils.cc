@@ -1,6 +1,7 @@
 #include "math_utils.h"
 
-#include "common/log/log.h"
+// #include "common/log/log.h"
+#include <stdexcept>
 
 namespace common {
 
@@ -18,7 +19,8 @@ double Rad2Degree(double rad) {
 }
 
 const std::vector<int> Range(int begin, int end, int step) {
-  ACHECK(step != 0) << "Step must be non-zero";
+  // ACHECK(step != 0) << "Step must be non-zero";
+  if (step == 0) throw std::invalid_argument("Step must be non-zero");
   int sign = step < 0 ? -1 : 1;
   int num = (end - begin - sign) / step + 1;
   if (num <= 0) return {};

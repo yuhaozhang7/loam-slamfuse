@@ -4,7 +4,7 @@
 #include <ceres/loss_function.h>
 #include <ceres/types.h>
 
-#include "common/log/log.h"
+// #include "common/log/log.h"
 
 namespace oh_my_loam {
 
@@ -29,7 +29,7 @@ bool PoseSolver::Solve(int max_iter_num, bool verbose,
   options.minimizer_progress_to_stdout = false;
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem_, &summary);
-  AINFO_IF(verbose) << summary.BriefReport();
+  // ---AINFO_IF(verbose) << summary.BriefReport();---
   if (pose) *pose = common::Pose3d(r_quat_, t_vec_);
   return summary.termination_type == ceres::CONVERGENCE;
 }
