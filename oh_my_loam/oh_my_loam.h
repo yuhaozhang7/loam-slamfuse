@@ -1,6 +1,7 @@
 #pragma once
 
 #include <yaml-cpp/node/node.h>
+#include <vector>
 
 #include "common/common.h"
 #include "oh_my_loam/extractor/extractor.h"
@@ -16,7 +17,7 @@ class OhMyLoam {
 
   bool Init();
 
-  void Run(double timestamp, const common::PointCloudConstPtr &cloud_in, common::Pose3d *const pose_ptr);
+  std::vector<TPointCloudConstPtr> Run(double timestamp, const common::PointCloudConstPtr &cloud_in, common::Pose3d *const pose_ptr);
 
  private:
   void Reset();

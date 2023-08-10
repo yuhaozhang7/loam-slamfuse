@@ -19,6 +19,7 @@
 #include <string>
 
 #include <pcl/io/pcd_io.h>
+#include <pcl/common/transforms.h>
 
 #include <chrono>
 #include <filesystem>
@@ -48,9 +49,17 @@ slambench::outputs::Output *track_frame_output;
 
 // System
 static oh_my_loam::OhMyLoam loam;
-common::PointCloudPtr cloud;
+size_t frame_id = 0;
+double timestamp;
+common::PointCloudPtr cloud;  // input cloud
+// contains rotation only
+Eigen::Matrix4f velo_2_lgrey = (Eigen::Matrix4f() << 7.027555e-03f, -9.999753e-01f,  2.599616e-05f,  0.000000e+00f,
+                                                    -2.254837e-03f, -4.184312e-05f, -9.999975e-01f,  0.000000e+00f,
+                                                     9.999728e-01f,  7.027479e-03f, -2.255075e-03f,  0.000000e+00f,
+                                                     0.000000e+00f,  0.000000e+00f,  0.000000e+00f,  1.000000e+00f).finished();
+// outputs of loam->Run()
+std::vector<oh_my_loam::TPointCloudConstPtr> cloud_vector;
 Eigen::Matrix4f pose;
-static size_t frame_id = 0;
 
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
@@ -67,14 +76,14 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     // Declare Outputs
     pose_output = new slambench::outputs::Output("Pose", slambench::values::VT_POSE, true);
 
-    // pointcloud_output = new slambench::outputs::Output("PointCloud", slambench::values::VT_POINTCLOUD, true);
-    // pointcloud_output->SetKeepOnlyMostRecent(true);
+    pointcloud_output = new slambench::outputs::Output("PointCloud", slambench::values::VT_POINTCLOUD, true);
+    pointcloud_output->SetKeepOnlyMostRecent(true);
 
     // track_frame_output = new slambench::outputs::Output("Tracking Frame", slambench::values::VT_FRAME);
     // track_frame_output->SetKeepOnlyMostRecent(true);
 
     slam_settings->GetOutputManager().RegisterOutput(pose_output);
-    // slam_settings->GetOutputManager().RegisterOutput(pointcloud_output);
+    slam_settings->GetOutputManager().RegisterOutput(pointcloud_output);
     // slam_settings->GetOutputManager().RegisterOutput(track_frame_output);
 
     // Inspect sensors
@@ -104,6 +113,8 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
 bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAMFrame *s) {
 
 	if (s->FrameSensor == lidar_sensor) {
+        
+        timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
 
         char* data = (char*)s->GetData();
         uint32_t count = *(uint32_t*)data;
@@ -143,16 +154,13 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
 
 
 bool sb_process_once(SLAMBenchLibraryHelper *slam_settings) {
-    
-    auto millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch());
-    double timestamp = millisecs.count() / 1000.0;
-    std::cout << "Ohmyloam: frame_id = " << ++frame_id
+
+    std::cout << "\nOhmyloam: frame_id = " << ++frame_id
               << ", timestamp = " << FMT_TIMESTAMP(timestamp)
               << ", point_number = " << cloud->size() << std::endl;
     
     common::Pose3d pose3d;
-    loam.Run(timestamp, cloud, &pose3d);
+    cloud_vector = loam.Run(timestamp, cloud, &pose3d);
     pose = pose3d.TransMat().cast<float>();
 
     return true;
@@ -164,9 +172,35 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
     slambench::TimeStamp ts = *ts_p;
 
-    if(pose_output->IsActive()) {
+    if (pose_output->IsActive()) {
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-		pose_output->AddPoint(ts, new slambench::values::PoseValue(pose));
+        // pose = velo_2_lgrey * pose;
+		pose_output->AddPoint(ts, new slambench::values::PoseValue(velo_2_lgrey * pose));
+    }
+
+    if (pointcloud_output->IsActive()) {
+        // PointCloud cloud;
+        oh_my_loam::TPointCloudConstPtr cloud_corn = cloud_vector.at(0);
+        oh_my_loam::TPointCloudConstPtr cloud_surf = cloud_vector.at(1);
+
+        oh_my_loam::TPointCloudPtr cloud_corn_trans(new oh_my_loam::TPointCloud);
+        oh_my_loam::TPointCloudPtr cloud_surf_trans(new oh_my_loam::TPointCloud);
+        Eigen::Matrix4f pose_map = velo_2_lgrey * pose;
+
+        pcl::transformPointCloud(*cloud_corn, *cloud_corn_trans, pose_map);
+        pcl::transformPointCloud(*cloud_surf, *cloud_surf_trans, pose_map);
+
+        auto slambench_point_cloud = new slambench::values::PointCloudValue();
+        for(const auto &p : *cloud_corn_trans) {
+            slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+        }
+        for(const auto &p : *cloud_surf_trans) {
+            slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+        }
+
+        // Take lock only after generating the map
+        std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
+        pointcloud_output->AddPoint(ts, slambench_point_cloud);
     }
 
     return true;
@@ -175,7 +209,7 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
 bool sb_clean_slam_system() {
     delete pose_output;
-    // delete pointcloud_output;
+    delete pointcloud_output;
     // delete track_frame_output;
     delete lidar_sensor;
     return true;

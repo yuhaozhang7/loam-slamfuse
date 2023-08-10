@@ -1,7 +1,5 @@
 #include "oh_my_loam.h"
 
-#include <vector>
-
 #include "common/pcl/pcl_utils.h"
 #include "common/registerer/registerer.h"
 
@@ -50,9 +48,9 @@ void OhMyLoam::Reset() {
   mapper_->Reset();
 }
 
-void OhMyLoam::Run(double timestamp,
-                   const common::PointCloudConstPtr &cloud_in,
-                   common::Pose3d *const pose_ptr) {
+std::vector<TPointCloudConstPtr> OhMyLoam::Run(double timestamp,
+                                               const common::PointCloudConstPtr &cloud_in,
+                                               common::Pose3d *const pose_ptr) {
   common::PointCloudPtr cloud(new common::PointCloud);
   RemoveOutliers(*cloud_in, cloud.get());
   std::vector<Feature> features;
@@ -66,8 +64,14 @@ void OhMyLoam::Run(double timestamp,
                    &pose_curr2map);
   
   // ---if (is_vis_) Visualize(pose_curr2map, cloud_corn, cloud_surf, timestamp);---
-  
+
+  //assign outputs
+  std::vector<TPointCloudConstPtr> cloud_vector;
+  cloud_vector.push_back(cloud_corn);
+  cloud_vector.push_back(cloud_surf);
   *pose_ptr = pose_curr2map;
+
+  return cloud_vector;
 }
 
 /*

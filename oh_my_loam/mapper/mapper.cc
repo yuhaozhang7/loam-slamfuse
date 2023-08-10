@@ -49,9 +49,10 @@ void Mapper::Process(double timestamp, const TPointCloudConstPtr &cloud_corn,
     return;
   }
   if (GetState() == DONE) {
-    thread_.reset(new std::thread(&Mapper::Run, this, cloud_corn, cloud_surf,
-                                  pose_curr2odom));
-    if (thread_->joinable()) thread_->detach();
+    // thread_.reset(new std::thread(&Mapper::Run, this, cloud_corn, cloud_surf,
+    //                               pose_curr2odom));
+    // if (thread_->joinable()) thread_->detach();
+    Run(cloud_corn, cloud_surf, pose_curr2odom);
   }
   std::lock_guard<std::mutex> lock(state_mutex_);
   *pose_curr2map = pose_odom2map_ * pose_curr2odom;
@@ -112,7 +113,7 @@ void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
   pose_odom2map_ = pose_curr2map * pose_curr2odom.Inv();
   // ---AINFO << "Pose_curr2map = " << pose_curr2map.ToString();---
   // ---AUSER << "Mapper::Run: " << BLOCK_TIMER_STOP_FMT;---
-  std::cout << "Pose_curr2map = " << pose_curr2map.ToString() << std::endl;
+  // ---std::cout << "Pose_curr2map = " << pose_curr2map.ToString() << std::endl;---
   std::cout << "Mapper::Run: " << BLOCK_TIMER_STOP_FMT << std::endl;
   // ---if (is_vis_) Visualize(pl_pairs, pp_pairs, pose_curr2odom, pose_curr2map);---
   state_ = DONE;  // be careful with deadlock
