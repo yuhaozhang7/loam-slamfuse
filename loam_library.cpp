@@ -12,6 +12,7 @@
 #include <io/SLAMFrame.h>
 #include <io/sensor/LidarSensor.h>
 #include <io/sensor/CameraSensor.h>
+#include <io/sensor/CameraSensorFinder.h>
 #include <io/sensor/GroundTruthSensor.h>
 #include <chrono>
 #include <Eigen/Eigen>
@@ -41,22 +42,29 @@ std::string yaml_path;
 
 // Sensors
 slambench::io::LidarSensor *lidar_sensor;
+slambench::io::CameraSensor *grey_sensor;
+
+size_t frame_id = 0;
+static sb_uint2 inputSize;
+std::vector<unsigned char> grey_image;
+
+slambench::TimeStamp last_frame_timestamp;
+double current_timestamp;
 
 // Outputs
 slambench::outputs::Output *pose_output;
 slambench::outputs::Output *pointcloud_output;
-slambench::outputs::Output *track_frame_output;
+slambench::outputs::Output *grey_frame_output;
 
 // System
 static oh_my_loam::OhMyLoam loam;
-size_t frame_id = 0;
-double timestamp;
-common::PointCloudPtr cloud;  // input cloud
 // contains rotation only
 Eigen::Matrix4f velo_2_lgrey = (Eigen::Matrix4f() << 7.027555e-03f, -9.999753e-01f,  2.599616e-05f,  0.000000e+00f,
                                                     -2.254837e-03f, -4.184312e-05f, -9.999975e-01f,  0.000000e+00f,
                                                      9.999728e-01f,  7.027479e-03f, -2.255075e-03f,  0.000000e+00f,
                                                      0.000000e+00f,  0.000000e+00f,  0.000000e+00f,  1.000000e+00f).finished();
+// input cloud
+common::PointCloudPtr cloud;
 // outputs of loam->Run()
 std::vector<oh_my_loam::TPointCloudConstPtr> cloud_vector;
 Eigen::Matrix4f pose;
@@ -79,12 +87,12 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     pointcloud_output = new slambench::outputs::Output("PointCloud", slambench::values::VT_POINTCLOUD, true);
     pointcloud_output->SetKeepOnlyMostRecent(true);
 
-    // track_frame_output = new slambench::outputs::Output("Tracking Frame", slambench::values::VT_FRAME);
-    // track_frame_output->SetKeepOnlyMostRecent(true);
+    grey_frame_output = new slambench::outputs::Output("Grey Frame", slambench::values::VT_FRAME);
+    grey_frame_output->SetKeepOnlyMostRecent(true);
 
     slam_settings->GetOutputManager().RegisterOutput(pose_output);
     slam_settings->GetOutputManager().RegisterOutput(pointcloud_output);
-    // slam_settings->GetOutputManager().RegisterOutput(track_frame_output);
+    slam_settings->GetOutputManager().RegisterOutput(grey_frame_output);
 
     // Inspect sensors
     lidar_sensor = (slambench::io::LidarSensor*)slam_settings->get_sensors().GetSensor(slambench::io::LidarSensor::kLidarType);
@@ -92,6 +100,28 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
         std::cerr << "Invalid sensors found, Lidar not found." << std::endl;
         return false;
     }
+
+    slambench::io::CameraSensorFinder sensor_finder;
+	grey_sensor = sensor_finder.FindOne(slam_settings->get_sensors(), {{"camera_type", "grey"}});
+    if (grey_sensor == nullptr) {
+		std::cerr << "Invalid sensors found, Grey not found." << std::endl;
+		delete pose_output;
+        delete pointcloud_output;
+        delete grey_frame_output;
+		return false;
+	}
+	
+	// check sensor frame and pixel format
+	if(grey_sensor->PixelFormat != slambench::io::pixelformat::G_I_8) {
+		std::cerr << "Grey sensor is not in G_I_8 format" << std::endl;
+        delete pose_output;
+        delete pointcloud_output;
+        delete grey_frame_output;
+		return false;
+	}
+
+    inputSize = make_sb_uint2(grey_sensor->Width, grey_sensor->Height);
+    grey_image.resize(grey_sensor->Width * grey_sensor->Height);
 
     // Start LOAM
     common::YAMLConfig::Instance()->Init(default_yaml_path);
@@ -113,8 +143,9 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
 bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAMFrame *s) {
 
 	if (s->FrameSensor == lidar_sensor) {
-        
-        timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
+
+        last_frame_timestamp = s->Timestamp;
+        current_timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
 
         char* data = (char*)s->GetData();
         uint32_t count = *(uint32_t*)data;
@@ -148,6 +179,15 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         
         return true;
 	}
+
+    if(s->FrameSensor == grey_sensor) {
+        std::cout << "start memcpy" << std::endl;
+		memcpy(grey_image.data(), s->GetData(), s->GetSize());
+        std::cout << "memcpy is good" << std::endl;
+		s->FreeData();
+		last_frame_timestamp = s->Timestamp;
+		return true;
+	}
 	
 	return false;
 }
@@ -156,11 +196,11 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
 bool sb_process_once(SLAMBenchLibraryHelper *slam_settings) {
 
     std::cout << "\nOhmyloam: frame_id = " << ++frame_id
-              << ", timestamp = " << FMT_TIMESTAMP(timestamp)
+              << ", timestamp = " << FMT_TIMESTAMP(current_timestamp)
               << ", point_number = " << cloud->size() << std::endl;
     
     common::Pose3d pose3d;
-    cloud_vector = loam.Run(timestamp, cloud, &pose3d);
+    cloud_vector = loam.Run(current_timestamp, cloud, &pose3d);
     pose = pose3d.TransMat().cast<float>();
 
     return true;
@@ -174,12 +214,10 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
     if (pose_output->IsActive()) {
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-        // pose = velo_2_lgrey * pose;
 		pose_output->AddPoint(ts, new slambench::values::PoseValue(velo_2_lgrey * pose));
     }
 
     if (pointcloud_output->IsActive()) {
-        // PointCloud cloud;
         oh_my_loam::TPointCloudConstPtr cloud_corn = cloud_vector.at(0);
         oh_my_loam::TPointCloudConstPtr cloud_surf = cloud_vector.at(1);
 
@@ -203,6 +241,11 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
         pointcloud_output->AddPoint(ts, slambench_point_cloud);
     }
 
+    if(grey_frame_output->IsActive()) {
+		std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
+		grey_frame_output->AddPoint(last_frame_timestamp, new slambench::values::FrameValue(inputSize.x, inputSize.y, slambench::io::pixelformat::G_I_8, (void*) &(grey_image.at(0))));
+	}
+
     return true;
 }
 
@@ -210,7 +253,8 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 bool sb_clean_slam_system() {
     delete pose_output;
     delete pointcloud_output;
-    // delete track_frame_output;
+    delete grey_frame_output;
     delete lidar_sensor;
+    delete grey_sensor;
     return true;
 }

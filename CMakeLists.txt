@@ -39,9 +39,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# add_subdirectory(common)
-# add_subdirectory(oh_my_loam)
-# add_subdirectory(examples)
 
 set(appname loam)
 
@@ -82,34 +79,6 @@ oh_my_loam/mapper/mapper.cc
 oh_my_loam/odometer/odometer.cc
 oh_my_loam/oh_my_loam.cc)
 
-# common/log/log.h
-# common/visualizer/lidar_visualizer_utils.h 
-# common/visualizer/lidar_visualizer.h
-# oh_my_loam/visualizer/extractor_visualizer.h 
-# oh_my_loam/visualizer/mapper_visualizer.h 
-# oh_my_loam/visualizer/odometer_visualizer.h 
-# oh_my_loam/visualizer/ohmyloam_visualizer.h
-# oh_my_loam/oh_my_loam.h
-# common/log/log.cc
-# common/visualizer/lidar_visualizer_utils.cc 
-# oh_my_loam/visualizer/extractor_visualizer.cc 
-# oh_my_loam/visualizer/mapper_visualizer.cc 
-# oh_my_loam/visualizer/odometer_visualizer.cc 
-# oh_my_loam/visualizer/ohmyloam_visualizer.cc
-
-
-# ===============================
-add_executable(test test.cpp)
-
-target_link_libraries(test 
-  ${PCL_LIBRARIES}
-  ${YAML_CPP_LIBRARIES}
-  ${appname}
-  ${CERES_LIBRARIES}
-  -lflann
-  -llz4)
-# ===============================
-
 add_library(${appname}-original SHARED loam_library.cpp)
 
 target_link_libraries(${appname}-original 
@@ -120,7 +89,8 @@ target_link_libraries(${appname}-original
   ${CERES_LIBRARIES}
   -lflann
   -llz4)
-        
+
+# TODO: Change the path
 SET(SLAMBENCH_C_WRAPPER	-Wl,--whole-archive -L/home/yuhao/slambench/build/lib slambench-c-wrapper	-Wl,--no-whole-archive)
 SET(NULL_FILE_PATH	/home/yuhao/slambench/build/null.cpp)
 
