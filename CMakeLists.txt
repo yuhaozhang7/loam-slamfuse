@@ -11,6 +11,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 # find_package(g3log REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
+file(GLOB FLANN_LIBRARIES "${FLANN_LIBRARY_DIR}/libflann*.*")
 file(GLOB PCL_LIBRARIES "${PCL_LIBRARY_DIR}/libpcl_*.so*")
 set(CERES_LIBRARIES
     ${CERES_LIBRARY_DIR}/libceres.so
@@ -21,6 +22,7 @@ set(CERES_LIBRARIES
 
 include_directories(SYSTEM
   ${EIGEN_INCLUDE_DIR}
+  ${FLANN_INCLUDE_DIR}
   ${PCL_INCLUDE_DIR}
   ${CERES_INCLUDE_DIR}
   ${YAML_CPP_INCLUDE_DIR}
@@ -70,7 +72,8 @@ oh_my_loam/oh_my_loam.cc)
 
 add_library(${appname}-original SHARED loam_library.cpp)
 
-target_link_libraries(${appname}-original 
+target_link_libraries(${appname}-original
+  ${FLANN_LIBRARIES}
   ${PCL_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${appname}
