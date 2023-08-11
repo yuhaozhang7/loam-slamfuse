@@ -72,7 +72,6 @@ add_library(${appname}-original SHARED loam_library.cpp)
 
 target_link_libraries(${appname}-original 
   ${PCL_LIBRARIES}
-  ${G3LOG_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${appname}
   ${CERES_LIBRARIES})
