@@ -1,23 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 project(oh_my_loam)
+set(appname loam)
 
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
-# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # find_package(Ceres REQUIRED)
 # find_package(PCL QUIET)
 # find_package(g3log REQUIRED)
 find_package(yaml-cpp REQUIRED)
-
-set(EIGEN_INCLUDE_DIR "/home/yuhao/slambench/deps/eigen3/include/eigen3")
-set(PCL_INCLUDE_DIR "/home/yuhao/slambench/deps/pcl/include/pcl-1.8")
-set(CERES_INCLUDE_DIR "/home/yuhao/slambench/deps/ceres/include")
-set(SLAMBENCH_INCLUDE_DIR "/home/yuhao/slambench/framework/shared/include")
-
-set(PCL_LIBRARY_DIR /home/yuhao/slambench/deps/pcl/lib)
-set(CERES_LIBRARY_DIR /home/yuhao/slambench/deps/ceres/lib)
 
 file(GLOB PCL_LIBRARIES "${PCL_LIBRARY_DIR}/libpcl_*.so*")
 set(CERES_LIBRARIES
@@ -38,9 +30,6 @@ include_directories(SYSTEM
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
-
-set(appname loam)
 
 add_library(${appname} SHARED
 common/color/color.h
@@ -86,22 +75,21 @@ target_link_libraries(${appname}-original
   ${G3LOG_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${appname}
-  ${CERES_LIBRARIES}
-  -lflann
-  -llz4)
+  ${CERES_LIBRARIES})
+#  -lflann
+#  -llz4)
 
-# TODO: Change the path
-SET(SLAMBENCH_C_WRAPPER	-Wl,--whole-archive -L/home/yuhao/slambench/build/lib slambench-c-wrapper	-Wl,--no-whole-archive)
-SET(NULL_FILE_PATH	/home/yuhao/slambench/build/null.cpp)
+SET(SLAMBENCH_C_WRAPPER	-Wl,--whole-archive -L${WRAPPER_PATH} slambench-c-wrapper	-Wl,--no-whole-archive)
+SET(NULL_FILE_PATH	${WRAPPER_PATH}/null.cpp)
 
 function(generate_slam_library library_name )
 
     add_library(${library_name}-library SHARED ${NULL_FILE_PATH})
     target_link_libraries(${library_name}-library PRIVATE ${SLAMBENCH_C_WRAPPER} ${library_name})
     SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES LINK_FLAGS "${ARGN}")
-    # SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+    SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "${LIB_PATH}")
     install(TARGETS ${library_name}-library  DESTINATION  lib/)
 
 endfunction()
 
-generate_slam_library(${appname}-original "")
+generate_slam_library(${appname}-original "-Wl,--disable-new-dtags")
