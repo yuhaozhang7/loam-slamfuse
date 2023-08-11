@@ -71,6 +71,8 @@ oh_my_loam/odometer/odometer.cc
 oh_my_loam/oh_my_loam.cc)
 
 add_library(${appname}-original SHARED loam_library.cpp)
+install(TARGETS ${appname}  DESTINATION  lib/)
+install(TARGETS ${appname}-original  DESTINATION  lib/)
 
 target_link_libraries(${appname}-original
   ${FLANN_LIBRARIES}
