@@ -29,7 +29,8 @@
 #include "oh_my_loam/oh_my_loam.h"
 
 
-const std::string default_yaml_path = "/deps/aloam/configs/default.yaml";
+// const std::string default_yaml_path = "/deps/aloam/configs/default.yaml";
+const std::string default_yaml_path = "/home/yuhao/loam/configs/default.yaml";
 
 // Parameters
 std::string lidar_name;
@@ -86,7 +87,6 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
         std::cerr << "Invalid sensors found, Lidar not found." << std::endl;
         delete pose_output;
         delete pointcloud_output;
-        delete grey_frame_output;
         return false;
     }
 
@@ -98,10 +98,11 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
 
     if (!loam.Init()) {
-        std::cerr << "Failed to initilize slam system." << std::endl;
+        std::cerr << "Failed to initialize slam system." << std::endl;
+        return false;
     }
 
-    std::cout << "LOAM start..., lidar = " << default_lidar_name << std::endl;
+    std::cout << "A-LOAM initialized" << std::endl;
 
     return true;
 }
@@ -114,16 +115,20 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         last_frame_timestamp = s->Timestamp;
         current_timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
 
-        char* data = (char*)s->GetData();
-        uint32_t count = *(uint32_t*)data;
-        float *fdata = (float*)(data+4);
+        // char* data = (char*)s->GetData();
+        // uint32_t count = *(uint32_t*)data;
+        // float *fdata = (float*)(data);
+
+        float *fdata = static_cast<float*>(s->GetData());
+        int count = s->GetSize()/(4 * sizeof(float));
 
         cloud = common::PointCloudPtr(new common::PointCloud);
 
-        for(uint32_t i = 0; i < count; ++i) {
-            float x = fdata[i*3];
-            float y = fdata[i*3+1];
-            float z = fdata[i*3+2];
+        for(int i = 0; i < count; ++i) {
+            float x = fdata[i*4];
+            float y = fdata[i*4+1];
+            float z = fdata[i*4+2];
+            float r = fdata[i*4+3];
             common::Point point;
             point.x = x;
             point.y = y;
