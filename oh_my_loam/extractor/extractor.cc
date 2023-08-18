@@ -17,7 +17,7 @@ bool Extractor::Init() {
   is_vis_ = config_["vis"].as<bool>();
   verbose_ = config_["verbose"].as<bool>();
   // ---AINFO << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF");---
-  std::cout << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
+  // std::cout << "Extraction visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
   // ---if (is_vis_) visualizer_.reset(new ExtractorVisualizer);---
   return true;
 }
@@ -52,7 +52,7 @@ void Extractor::Process(double timestamp,
     features->push_back(std::move(feature));
   }
   // ---AINFO << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT;---
-  std::cout << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT << std::endl;
+  // std::cout << "Extractor::Process: " << BLOCK_TIMER_STOP_FMT << std::endl;
   // ---if (is_vis_) Visualize(cloud, *features, timestamp);---
 }
 

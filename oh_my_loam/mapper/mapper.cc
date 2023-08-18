@@ -21,7 +21,7 @@ bool Mapper::Init() {
   is_vis_ = config_["vis"].as<bool>();
   verbose_ = config_["verbose"].as<bool>();
   // ---AINFO << "Mapping visualizer: " << (is_vis_ ? "ON" : "OFF");---
-  std::cout << "Mapping visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
+  // std::cout << "Mapping visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
   map_shape_ = YAMLConfig::GetSeq<int>(config_["map_shape"]);
   submap_shape_ = YAMLConfig::GetSeq<int>(config_["submap_shape"]);
   map_step_ = config_["map_step"].as<double>();
@@ -45,7 +45,7 @@ void Mapper::Process(double timestamp, const TPointCloudConstPtr &cloud_corn,
     UpdateMap(*pose_curr2map, cloud_corn, cloud_surf);
     SetState(DONE);
     // ---AINFO << "Mapper initialized...";---
-    std::cout << "Mapper initialized..." << std::endl;
+    // std::cout << "Mapper initialized..." << std::endl;
     return;
   }
   if (GetState() == DONE) {
@@ -57,7 +57,7 @@ void Mapper::Process(double timestamp, const TPointCloudConstPtr &cloud_corn,
   std::lock_guard<std::mutex> lock(state_mutex_);
   *pose_curr2map = pose_odom2map_ * pose_curr2odom;
   // ---AINFO << "Pose_curr2map = " << pose_curr2map->ToString();---
-  std::cout << "Pose_curr2map = " << pose_curr2map->ToString() << std::endl;
+  // std::cout << "Pose_curr2map = " << pose_curr2map->ToString() << std::endl;
 }
 
 void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
@@ -89,8 +89,8 @@ void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
         config_["min_correspondence_num"].as<size_t>()) {
       // AWARN << "Too less correspondence: " << pl_pairs.size() << " + "
       //       << pp_pairs.size();
-      std::cerr << "Too less correspondence: " << pl_pairs.size() << " + "
-                << pp_pairs.size() << std::endl;
+      // std::cerr << "Too less correspondence: " << pl_pairs.size() << " + "
+      //          << pp_pairs.size() << std::endl;
       continue;
     }
     PoseSolver solver(pose_curr2map);
@@ -103,7 +103,7 @@ void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
     if (!solver.Solve(config_["solve_iter_num"].as<int>(), verbose_,
                       &pose_curr2map)) {
       // ---AWARN << "Mapping solve: no_convergence";---
-      std::cerr << "Mapping solve: no_convergence" << std::endl;
+      // std::cerr << "Mapping solve: no_convergence" << std::endl;
     }
     // AINFO_IF(verbose_) << "Odometer::ICP: iter_" << i << ": "
     //                    << BLOCK_TIMER_STOP_FMT;
@@ -114,7 +114,7 @@ void Mapper::Run(const TPointCloudConstPtr &cloud_corn,
   // ---AINFO << "Pose_curr2map = " << pose_curr2map.ToString();---
   // ---AUSER << "Mapper::Run: " << BLOCK_TIMER_STOP_FMT;---
   // ---std::cout << "Pose_curr2map = " << pose_curr2map.ToString() << std::endl;---
-  std::cout << "Mapper::Run: " << BLOCK_TIMER_STOP_FMT << std::endl;
+  // std::cout << "Mapper::Run: " << BLOCK_TIMER_STOP_FMT << std::endl;
   // ---if (is_vis_) Visualize(pl_pairs, pp_pairs, pose_curr2odom, pose_curr2map);---
   state_ = DONE;  // be careful with deadlock
 }

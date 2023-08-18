@@ -14,7 +14,7 @@ bool Odometer::Init() {
   is_vis_ = config_["vis"].as<bool>();
   verbose_ = config_["verbose"].as<bool>();
   // ---AINFO << "Odometry visualizer: " << (is_vis_ ? "ON" : "OFF");---
-  std::cout << "Odometry visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
+  // std::cout << "Odometry visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
   // ---if (is_vis_) visualizer_.reset(new OdometerVisualizer);---
   return true;
 }
@@ -32,7 +32,7 @@ void Odometer::Process(double timestamp, const std::vector<Feature> &features,
     pose_curr2world_.SetIdentity();
     pose_out->SetIdentity();
     // ---AINFO << "Odometer initialized...";---
-    std::cout << "Odometer initialized..." << std::endl;
+    // std::cout << "Odometer initialized..." << std::endl;
     return;
   }
   BLOCK_TIMER_START;
@@ -52,8 +52,8 @@ void Odometer::Process(double timestamp, const std::vector<Feature> &features,
         config_["min_correspondence_num"].as<size_t>()) {
       // AWARN << "Too less correspondence: " << pl_pairs.size() << " + "
       //       << pp_pairs.size();
-      std::cerr << "Too less correspondence: " << pl_pairs.size() << " + "
-                << pp_pairs.size() << std::endl;
+      // std::cerr << "Too less correspondence: " << pl_pairs.size() << " + "
+      //           << pp_pairs.size() << std::endl;
       continue;
     }
     PoseSolver solver(pose_curr2last_);
@@ -66,7 +66,7 @@ void Odometer::Process(double timestamp, const std::vector<Feature> &features,
     bool is_converge = solver.Solve(config_["solve_iter_num"].as<int>(),
                                     verbose_, &pose_curr2last_);
     // ---AWARN_IF(!is_converge) << "Odometry solve: no_convergence";---
-    if (!is_converge) std::cerr << "Odometry solve: no_convergence" << std::endl;
+    // if (!is_converge) std::cerr << "Odometry solve: no_convergence" << std::endl;
     // AINFO_IF(verbose_) << "Odometer::ICP: iter_" << i << ": "
     //                    << BLOCK_TIMER_STOP_FMT;
   }
@@ -77,7 +77,7 @@ void Odometer::Process(double timestamp, const std::vector<Feature> &features,
   // ---if (is_vis_) Visualize(pl_pairs, pp_pairs);---
   UpdatePre(features);
   // ---AINFO << "Odometer::Porcess: " << BLOCK_TIMER_STOP_FMT;---
-  std::cout << "Odometer::Porcess: " << BLOCK_TIMER_STOP_FMT << std::endl;
+  // std::cout << "Odometer::Porcess: " << BLOCK_TIMER_STOP_FMT << std::endl;
 }
 
 void Odometer::MatchCorn(const TPointCloud &src,

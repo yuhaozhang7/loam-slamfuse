@@ -181,9 +181,7 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
 	}
 
     if(s->FrameSensor == grey_sensor) {
-        std::cout << "start memcpy" << std::endl;
 		memcpy(grey_image.data(), s->GetData(), s->GetSize());
-        std::cout << "memcpy is good" << std::endl;
 		s->FreeData();
 		last_frame_timestamp = s->Timestamp;
 		return true;
@@ -195,9 +193,9 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
 
 bool sb_process_once(SLAMBenchLibraryHelper *slam_settings) {
 
-    std::cout << "\nOhmyloam: frame_id = " << ++frame_id
-              << ", timestamp = " << FMT_TIMESTAMP(current_timestamp)
-              << ", point_number = " << cloud->size() << std::endl;
+    //std::cout << "\nOhmyloam: frame_id = " << ++frame_id
+    //          << ", timestamp = " << FMT_TIMESTAMP(current_timestamp)
+    //          << ", point_number = " << cloud->size() << std::endl;
     
     common::Pose3d pose3d;
     cloud_vector = loam.Run(current_timestamp, cloud, &pose3d);
