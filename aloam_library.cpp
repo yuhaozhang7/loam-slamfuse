@@ -29,8 +29,8 @@
 #include "oh_my_loam/oh_my_loam.h"
 
 
-// const std::string default_yaml_path = "/deps/aloam/configs/default.yaml";
-const std::string default_yaml_path = "/home/yuhao/loam/configs/default.yaml";
+const std::string default_yaml_path = "/deps/aloam/configs/configs.yaml";
+// const std::string default_yaml_path = "/home/yuhao/aloam/configs/configs.yaml";
 
 // Parameters
 std::string lidar_name;
@@ -50,11 +50,20 @@ slambench::outputs::Output *pointcloud_output;
 
 // System
 static oh_my_loam::OhMyLoam loam;
+
+std::string dataset_name;
+bool show_point_cloud;
+
 // contains rotation only
-Eigen::Matrix4f velo_2_lgrey = (Eigen::Matrix4f() << 7.027555e-03f, -9.999753e-01f,  2.599616e-05f,  0.000000e+00f,
+Eigen::Matrix4f velo_2_lgrey_kitti = (Eigen::Matrix4f() << 7.027555e-03f, -9.999753e-01f,  2.599616e-05f,  0.000000e+00f,
                                                     -2.254837e-03f, -4.184312e-05f, -9.999975e-01f,  0.000000e+00f,
                                                      9.999728e-01f,  7.027479e-03f, -2.255075e-03f,  0.000000e+00f,
                                                      0.000000e+00f,  0.000000e+00f,  0.000000e+00f,  1.000000e+00f).finished();
+
+Eigen::Matrix4f align_mat = (Eigen::Matrix4f() <<  0.0, -1.0,  0.0,  0.0,
+                                                   0.0,  0.0, -1.0,  0.0,
+                                                   1.0,  0.0,  0.0,  0.0,
+                                                   0.0,  0.0,  0.0,  1.0).finished();
 // input cloud
 common::PointCloudPtr cloud;
 // outputs of loam->Run()
@@ -93,9 +102,11 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     // Start LOAM
     common::YAMLConfig::Instance()->Init(default_yaml_path);
 
-    bool is_log_to_file = common::YAMLConfig::Instance()->Get<bool>("log_to_file");
-    std::string log_path = common::YAMLConfig::Instance()->Get<std::string>("log_path");
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
+    dataset_name = common::YAMLConfig::Instance()->Get<std::string>("dataset_name");
+    show_point_cloud = common::YAMLConfig::Instance()->Get<bool>("show_point_cloud");
+
+    if (dataset_name == "KITTI") align_mat = velo_2_lgrey_kitti;
 
     if (!loam.Init()) {
         std::cerr << "Failed to initialize slam system." << std::endl;
@@ -162,16 +173,16 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
     if (pose_output->IsActive()) {
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-		pose_output->AddPoint(ts, new slambench::values::PoseValue(velo_2_lgrey * pose));
+		pose_output->AddPoint(ts, new slambench::values::PoseValue(align_mat * pose));
     }
 
-    if (pointcloud_output->IsActive()) {
+    if (pointcloud_output->IsActive() && show_point_cloud) {
         oh_my_loam::TPointCloudConstPtr cloud_corn = cloud_vector.at(0);
         oh_my_loam::TPointCloudConstPtr cloud_surf = cloud_vector.at(1);
 
         oh_my_loam::TPointCloudPtr cloud_corn_trans(new oh_my_loam::TPointCloud);
         oh_my_loam::TPointCloudPtr cloud_surf_trans(new oh_my_loam::TPointCloud);
-        Eigen::Matrix4f pose_map = velo_2_lgrey * pose;
+        Eigen::Matrix4f pose_map = align_mat * pose;
 
         pcl::transformPointCloud(*cloud_corn, *cloud_corn_trans, pose_map);
         pcl::transformPointCloud(*cloud_surf, *cloud_surf_trans, pose_map);

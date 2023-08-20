@@ -86,6 +86,7 @@ class Mapper {
   double map_step_;
   bool is_vis_ = false;
   bool verbose_ = false;
+  bool multi_thread_ = false;
   // visualizer
   // std::unique_ptr<MapperVisualizer> visualizer_{nullptr};
 

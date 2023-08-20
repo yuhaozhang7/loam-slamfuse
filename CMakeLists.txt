@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(oh_my_loam)
-set(appname loam)
+set(appname aloam)
 
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
 set(CMAKE_BUILD_TYPE "Release")
@@ -21,7 +21,7 @@ set(CERES_LIBRARIES
 
 
 include_directories(SYSTEM
-  ${EIGEN_INCLUDE_DIR}
+  ${EIGEN3_INCLUDE_DIR}
   ${FLANN_INCLUDE_DIR}
   ${PCL_INCLUDE_DIR}
   ${CERES_INCLUDE_DIR}
@@ -70,7 +70,7 @@ oh_my_loam/mapper/mapper.cc
 oh_my_loam/odometer/odometer.cc
 oh_my_loam/oh_my_loam.cc)
 
-add_library(${appname}-original SHARED loam_library.cpp)
+add_library(${appname}-original SHARED aloam_library.cpp)
 install(TARGETS ${appname}  DESTINATION  lib/)
 install(TARGETS ${appname}-original  DESTINATION  lib/)
 

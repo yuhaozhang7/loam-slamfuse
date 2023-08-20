@@ -20,6 +20,7 @@ bool Mapper::Init() {
   config_ = config["mapper_config"];
   is_vis_ = config_["vis"].as<bool>();
   verbose_ = config_["verbose"].as<bool>();
+  multi_thread_ = config_["multi_thread"].as<bool>();
   // ---AINFO << "Mapping visualizer: " << (is_vis_ ? "ON" : "OFF");---
   // std::cout << "Mapping visualizer: " << (is_vis_ ? "ON" : "OFF") << std::endl;
   map_shape_ = YAMLConfig::GetSeq<int>(config_["map_shape"]);
@@ -48,10 +49,11 @@ void Mapper::Process(double timestamp, const TPointCloudConstPtr &cloud_corn,
     // std::cout << "Mapper initialized..." << std::endl;
     return;
   }
-  if (GetState() == DONE) {
-    // thread_.reset(new std::thread(&Mapper::Run, this, cloud_corn, cloud_surf,
-    //                               pose_curr2odom));
-    // if (thread_->joinable()) thread_->detach();
+  if (GetState() == DONE && multi_thread_ == true) {
+    thread_.reset(new std::thread(&Mapper::Run, this, cloud_corn, cloud_surf,
+                                   pose_curr2odom));
+    if (thread_->joinable()) thread_->detach();
+  } else if (GetState() == DONE && multi_thread_ == false) {
     Run(cloud_corn, cloud_surf, pose_curr2odom);
   }
   std::lock_guard<std::mutex> lock(state_mutex_);

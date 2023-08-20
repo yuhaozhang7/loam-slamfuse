@@ -11,7 +11,7 @@ const double kPointMinDist = 0.5;
 
 bool OhMyLoam::Init() {
   config_ = common::YAMLConfig::Instance()->config();
-  is_vis_ = config_["vis"].as<bool>();
+  // is_vis_ = config_["vis"].as<bool>();
   extractor_.reset(common::Registerer<Extractor>::NewInstance(
       "Extractor" + config_["lidar"].as<std::string>()));
   if (!extractor_->Init()) {

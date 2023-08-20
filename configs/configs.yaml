@@ -1,9 +1,7 @@
 # global configs
 lidar: VLP
-log_to_file: false
-log_path: /data/log/oh_my_loam
-vis: true
-save_map_path: /home/yuhao/oh_my_loam.pcd
+dataset_name: KITTI # For odometry calibration, Use VLP-16 configuration for KITTI HDL-64
+show_point_cloud: true
 
 # configs for extractor
 extractor_config:
@@ -34,6 +32,7 @@ odometer_config:
 mapper_config:
   vis: false
   verbose: false
+  multi_thread: false   # <===== Note this one
   map_shape: [5, 21, 21]
   map_step: 50
   submap_shape: [1, 5, 5]
