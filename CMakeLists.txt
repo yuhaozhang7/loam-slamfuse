@@ -91,7 +91,7 @@ function(generate_slam_library library_name )
     add_library(${library_name}-library SHARED ${NULL_FILE_PATH})
     target_link_libraries(${library_name}-library PRIVATE ${SLAMBENCH_C_WRAPPER} ${library_name})
     SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES LINK_FLAGS "${ARGN}")
-    SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "${LIB_PATH}")
+    SET_TARGET_PROPERTIES(${library_name}-library PROPERTIES INSTALL_RPATH "${LIB_PATH}")
     install(TARGETS ${library_name}-library  DESTINATION  lib/)
 
 endfunction()
