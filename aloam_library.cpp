@@ -55,11 +55,6 @@ std::string dataset_name;
 bool show_point_cloud;
 
 // contains rotation only
-Eigen::Matrix4f velo_2_lgrey_kitti = (Eigen::Matrix4f() << 7.027555e-03f, -9.999753e-01f,  2.599616e-05f,  0.000000e+00f,
-                                                    -2.254837e-03f, -4.184312e-05f, -9.999975e-01f,  0.000000e+00f,
-                                                     9.999728e-01f,  7.027479e-03f, -2.255075e-03f,  0.000000e+00f,
-                                                     0.000000e+00f,  0.000000e+00f,  0.000000e+00f,  1.000000e+00f).finished();
-
 Eigen::Matrix4f align_mat = (Eigen::Matrix4f() <<  0.0, -1.0,  0.0,  0.0,
                                                    0.0,  0.0, -1.0,  0.0,
                                                    1.0,  0.0,  0.0,  0.0,
@@ -106,7 +101,7 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     dataset_name = common::YAMLConfig::Instance()->Get<std::string>("dataset_name");
     show_point_cloud = common::YAMLConfig::Instance()->Get<bool>("show_point_cloud");
 
-    if (dataset_name == "KITTI") align_mat = velo_2_lgrey_kitti;
+    if (dataset_name == "KITTI") align_mat.block<3, 3>(0, 0) = lidar_sensor->Pose.block<3, 3>(0, 0);
 
     if (!loam.Init()) {
         std::cerr << "Failed to initialize slam system." << std::endl;
