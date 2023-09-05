@@ -53,6 +53,8 @@ static oh_my_loam::OhMyLoam loam;
 
 std::string dataset_name;
 bool show_point_cloud;
+bool show_full_map;
+int point_cloud_ratio;
 
 // contains rotation only
 Eigen::Matrix4f align_mat = (Eigen::Matrix4f() <<  0.0, -1.0,  0.0,  0.0,
@@ -64,6 +66,8 @@ common::PointCloudPtr cloud;
 // outputs of loam->Run()
 std::vector<oh_my_loam::TPointCloudConstPtr> cloud_vector;
 Eigen::Matrix4f pose;
+
+static oh_my_loam::TPointCloudPtr aloam_output_map(new oh_my_loam::TPointCloud);
 
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
@@ -100,8 +104,16 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
     dataset_name = common::YAMLConfig::Instance()->Get<std::string>("dataset_name");
     show_point_cloud = common::YAMLConfig::Instance()->Get<bool>("show_point_cloud");
+    show_full_map = common::YAMLConfig::Instance()->Get<bool>("show_full_map");
+    point_cloud_ratio = common::YAMLConfig::Instance()->Get<int>("point_cloud_ratio");
 
-    if (dataset_name == "KITTI") align_mat.block<3, 3>(0, 0) = lidar_sensor->Pose.block<3, 3>(0, 0);
+    auto tmp_align_mat = lidar_sensor->Pose.block<3, 3>(0, 0);
+
+    if (dataset_name == "KITTI" && tmp_align_mat.array().abs().maxCoeff() != 0.0) {
+        std::cout << "Rotate to align to KITTI left camera coordinate" << std::endl;
+        std::cout << tmp_align_mat << std::endl;
+        align_mat.block<3, 3>(0, 0) = tmp_align_mat;
+    }
 
     if (!loam.Init()) {
         std::cerr << "Failed to initialize slam system." << std::endl;
@@ -172,22 +184,40 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
     }
 
     if (pointcloud_output->IsActive() && show_point_cloud) {
+
+        Eigen::Matrix4f pose_map = align_mat * pose;
+
         oh_my_loam::TPointCloudConstPtr cloud_corn = cloud_vector.at(0);
         oh_my_loam::TPointCloudConstPtr cloud_surf = cloud_vector.at(1);
 
         oh_my_loam::TPointCloudPtr cloud_corn_trans(new oh_my_loam::TPointCloud);
         oh_my_loam::TPointCloudPtr cloud_surf_trans(new oh_my_loam::TPointCloud);
-        Eigen::Matrix4f pose_map = align_mat * pose;
 
         pcl::transformPointCloud(*cloud_corn, *cloud_corn_trans, pose_map);
         pcl::transformPointCloud(*cloud_surf, *cloud_surf_trans, pose_map);
 
         auto slambench_point_cloud = new slambench::values::PointCloudValue();
-        for(const auto &p : *cloud_corn_trans) {
-            slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
-        }
-        for(const auto &p : *cloud_surf_trans) {
-            slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+
+        if (show_full_map) {
+
+            aloam_output_map->points.insert(aloam_output_map->end(), cloud_corn_trans->begin(), cloud_corn_trans->end());
+            aloam_output_map->points.insert(aloam_output_map->end(), cloud_surf_trans->begin(), cloud_surf_trans->end());
+            aloam_output_map->width = aloam_output_map->points.size();  // Don't forget to update the width
+
+            int count = 0;
+            for(const auto &p : *aloam_output_map) {
+                if (count % point_cloud_ratio == 0) slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+                count++;
+            }
+
+        } else {
+            
+            for(const auto &p : *cloud_corn_trans) {
+                slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+            }
+            for(const auto &p : *cloud_surf_trans) {
+                slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
+            }
         }
 
         // Take lock only after generating the map

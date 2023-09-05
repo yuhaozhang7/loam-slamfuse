@@ -2,6 +2,8 @@
 lidar: VLP
 dataset_name: KITTI # For odometry calibration, Use VLP-16 configuration for KITTI HDL-64
 show_point_cloud: true
+show_full_map: true
+point_cloud_ratio: 20
 
 # configs for extractor
 extractor_config:
