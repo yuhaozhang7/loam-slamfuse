@@ -30,7 +30,6 @@
 
 
 const std::string default_yaml_path = "/deps/aloam/configs/configs.yaml";
-// const std::string default_yaml_path = "/home/yuhao/aloam/configs/configs.yaml";
 
 // Parameters
 std::string lidar_name;
@@ -72,7 +71,7 @@ static oh_my_loam::TPointCloudPtr aloam_output_map(new oh_my_loam::TPointCloud);
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
 
-    slam_settings->addParameter(TypedParameter<std::string>("", "configuration", "path to configuration YAML file", &yaml_path, &default_yaml_path));
+    slam_settings->addParameter(TypedParameter<std::string>("configs", "configuration", "path to configuration YAML file", &yaml_path, &default_yaml_path));
 
     return true;
 }
@@ -99,7 +98,7 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     }
 
     // Start LOAM
-    common::YAMLConfig::Instance()->Init(default_yaml_path);
+    common::YAMLConfig::Instance()->Init(yaml_path);
 
     std::string lidar = common::YAMLConfig::Instance()->Get<std::string>("lidar");
     dataset_name = common::YAMLConfig::Instance()->Get<std::string>("dataset_name");
@@ -133,29 +132,25 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         last_frame_timestamp = s->Timestamp;
         current_timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
 
-        // char* data = (char*)s->GetData();
-        // uint32_t count = *(uint32_t*)data;
-        // float *fdata = (float*)(data);
+        void* rawData = s->GetData();
+        size_t dataSize = s->GetVariableSize(); 
 
-        float *fdata = static_cast<float*>(s->GetData());
-        int count = s->GetSize()/(4 * sizeof(float));
+        char* byteData = reinterpret_cast<char*>(rawData);
 
         cloud = common::PointCloudPtr(new common::PointCloud);
 
-        for(int i = 0; i < count; ++i) {
-            float x = fdata[i*4];
-            float y = fdata[i*4+1];
-            float z = fdata[i*4+2];
-            float r = fdata[i*4+3];
-            common::Point point;
-            point.x = x;
-            point.y = y;
-            point.z = z;
-            cloud->points.push_back(point);
+        for (size_t i = 0; i < dataSize; i += sizeof(pcl::PointXYZI)) {
+            pcl::PointXYZI* point4D = reinterpret_cast<pcl::PointXYZI*>(byteData + i);
+
+            pcl::PointXYZ point3D;
+            point3D.x = point4D->x;
+            point3D.y = point4D->y;
+            point3D.z = point4D->z;
+            cloud->points.push_back(point3D);
         }
         cloud->width = cloud->points.size();
         cloud->height = 1;
-        
+
         return true;
 	}
 	
