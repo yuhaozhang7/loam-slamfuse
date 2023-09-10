@@ -34,7 +34,7 @@ odometer_config:
 mapper_config:
   vis: false
   verbose: false
-  multi_thread: false   # <===== Note this one
+  multi_thread: true   # <===== Note this one
   map_shape: [5, 21, 21]
   map_step: 50
   submap_shape: [1, 5, 5]
