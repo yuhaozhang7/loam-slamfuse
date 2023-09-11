@@ -1,6 +1,6 @@
 # global configs
 lidar: VLP
-dataset_name: DARPA # For odometry calibration, Use VLP-16 configuration for KITTI HDL-64
+dataset_name: DARPA
 show_point_cloud: false
 show_full_map: false
 point_cloud_ratio: 20
