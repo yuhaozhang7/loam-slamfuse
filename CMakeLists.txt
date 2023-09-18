@@ -75,13 +75,12 @@ install(TARGETS ${appname}  DESTINATION  lib/)
 install(TARGETS ${appname}-original  DESTINATION  lib/)
 
 target_link_libraries(${appname}-original
+  ${appname}
   ${FLANN_LIBRARIES}
   ${PCL_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
-  ${appname}
-  ${CERES_LIBRARIES})
-#  -lflann
-#  -llz4)
+  ${CERES_LIBRARIES}
+  pthread)
 
 SET(SLAMBENCH_C_WRAPPER	-Wl,--whole-archive -L${WRAPPER_PATH} slambench-c-wrapper	-Wl,--no-whole-archive)
 SET(NULL_FILE_PATH	${WRAPPER_PATH}/null.cpp)

@@ -126,28 +126,6 @@ bool sb_update_frame(SLAMBenchLibraryHelper *slam_settings , slambench::io::SLAM
         last_frame_timestamp = s->Timestamp;
         current_timestamp = static_cast<double>(s->Timestamp.S) + static_cast<double>(s->Timestamp.Ns) / 1e9;
 
-        if (dataset_name == "KITTI") {
-            float *fdata = static_cast<float*>(s->GetData());
-            int count = s->GetSize()/(4 * sizeof(float));
-
-            cloud = common::PointCloudPtr(new common::PointCloud);
-
-            for(int i = 0; i < count; ++i) {
-                float x = fdata[i*4];
-                float y = fdata[i*4+1];
-                float z = fdata[i*4+2];
-                float r = fdata[i*4+3];
-                common::Point point;
-                point.x = x;
-                point.y = y;
-                point.z = z;
-                cloud->points.push_back(point);
-            }
-            cloud->width = cloud->points.size();
-            cloud->height = 1;
-            return true;
-        }
-
         void* rawData = s->GetData();
         size_t dataSize = s->GetVariableSize(); 
 
