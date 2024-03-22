@@ -27,7 +27,7 @@ include_directories(SYSTEM
   ${PCL_INCLUDE_DIR}
   ${CERES_INCLUDE_DIR}
   ${YAML_CPP_INCLUDE_DIR}
-  ${SLAMBENCH_INCLUDE_DIR}
+  ${SLAMFUSE_INCLUDE_DIR}
 )
 
 include_directories(
