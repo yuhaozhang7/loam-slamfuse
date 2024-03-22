@@ -29,7 +29,7 @@
 #include "oh_my_loam/oh_my_loam.h"
 
 
-const std::string default_yaml_path = "/deps/aloam/configs/configs.yaml";
+const std::string default_yaml_path = "/deps/loam/configs/multi-thread.yaml";
 
 // Parameters
 std::string lidar_name;
@@ -44,8 +44,8 @@ slambench::TimeStamp last_frame_timestamp;
 double current_timestamp;
 
 // Outputs
-slambench::outputs::Output *pose_output;
-slambench::outputs::Output *pointcloud_output;
+slambench::outputs::Output *loam_pose_output;
+slambench::outputs::Output *loam_pointcloud_output;
 
 // System
 static oh_my_loam::OhMyLoam loam;
@@ -66,7 +66,7 @@ common::PointCloudPtr cloud;
 std::vector<oh_my_loam::TPointCloudConstPtr> cloud_vector;
 Eigen::Matrix4f pose;
 
-static oh_my_loam::TPointCloudPtr aloam_output_map(new oh_my_loam::TPointCloud);
+static oh_my_loam::TPointCloudPtr loam_output_map(new oh_my_loam::TPointCloud);
 
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
@@ -80,20 +80,20 @@ bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings) {
 bool sb_init_slam_system(SLAMBenchLibraryHelper *slam_settings) {
     
     // Declare Outputs
-    pose_output = new slambench::outputs::Output("Pose", slambench::values::VT_POSE, true);
+    loam_pose_output = new slambench::outputs::Output("LOAM Pose", slambench::values::VT_POSE, true);
 
-    pointcloud_output = new slambench::outputs::Output("PointCloud", slambench::values::VT_POINTCLOUD, true);
-    pointcloud_output->SetKeepOnlyMostRecent(true);
+    loam_pointcloud_output = new slambench::outputs::Output("LOAM PointCloud", slambench::values::VT_POINTCLOUD, true);
+    loam_pointcloud_output->SetKeepOnlyMostRecent(true);
 
-    slam_settings->GetOutputManager().RegisterOutput(pose_output);
-    slam_settings->GetOutputManager().RegisterOutput(pointcloud_output);
+    slam_settings->GetOutputManager().RegisterOutput(loam_pose_output);
+    slam_settings->GetOutputManager().RegisterOutput(loam_pointcloud_output);
 
     // Inspect sensors
     lidar_sensor = (slambench::io::LidarSensor*)slam_settings->get_sensors().GetSensor(slambench::io::LidarSensor::kLidarType);
     if (lidar_sensor == nullptr) {
         std::cerr << "Invalid sensors found, Lidar not found." << std::endl;
-        delete pose_output;
-        delete pointcloud_output;
+        delete loam_pose_output;
+        delete loam_pointcloud_output;
         return false;
     }
 
@@ -167,12 +167,12 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
     slambench::TimeStamp ts = *ts_p;
 
-    if (pose_output->IsActive()) {
+    if (loam_pose_output->IsActive()) {
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-		pose_output->AddPoint(ts, new slambench::values::PoseValue(align_mat * pose));
+		loam_pose_output->AddPoint(ts, new slambench::values::PoseValue(align_mat * pose));
     }
 
-    if (pointcloud_output->IsActive() && show_point_cloud) {
+    if (loam_pointcloud_output->IsActive() && show_point_cloud) {
 
         Eigen::Matrix4f pose_map = align_mat * pose;
 
@@ -189,12 +189,12 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
         if (show_full_map) {
 
-            aloam_output_map->points.insert(aloam_output_map->end(), cloud_corn_trans->begin(), cloud_corn_trans->end());
-            aloam_output_map->points.insert(aloam_output_map->end(), cloud_surf_trans->begin(), cloud_surf_trans->end());
-            aloam_output_map->width = aloam_output_map->points.size();  // Don't forget to update the width
+            loam_output_map->points.insert(loam_output_map->end(), cloud_corn_trans->begin(), cloud_corn_trans->end());
+            loam_output_map->points.insert(loam_output_map->end(), cloud_surf_trans->begin(), cloud_surf_trans->end());
+            loam_output_map->width = loam_output_map->points.size();  // Don't forget to update the width
 
             int count = 0;
-            for(const auto &p : *aloam_output_map) {
+            for(const auto &p : *loam_output_map) {
                 if (count % point_cloud_ratio == 0) slambench_point_cloud->AddPoint(slambench::values::Point3DF(p.x, p.y, p.z));
                 count++;
             }
@@ -211,7 +211,7 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
         // Take lock only after generating the map
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-        pointcloud_output->AddPoint(ts, slambench_point_cloud);
+        loam_pointcloud_output->AddPoint(ts, slambench_point_cloud);
     }
 
     return true;
@@ -219,8 +219,8 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
 
 bool sb_clean_slam_system() {
-    delete pose_output;
-    delete pointcloud_output;
+    delete loam_pose_output;
+    delete loam_pointcloud_output;
     delete lidar_sensor;
     return true;
 }

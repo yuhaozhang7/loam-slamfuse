@@ -1,8 +1,8 @@
 # global configs
 lidar: VLP
 dataset_name: DARPA
-show_point_cloud: false
-show_full_map: false
+show_point_cloud: true
+show_full_map: true
 point_cloud_ratio: 20
 
 # configs for extractor

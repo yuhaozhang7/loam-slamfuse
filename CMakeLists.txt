@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
-project(oh_my_loam)
-set(appname aloam)
+project(loam)
+set(appname loam)
 
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
 set(CMAKE_BUILD_TYPE "Release")
@@ -9,10 +9,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 # find_package(Ceres REQUIRED)
 # find_package(PCL QUIET)
 # find_package(g3log REQUIRED)
-find_package(yaml-cpp REQUIRED)
+# find_package(yaml-cpp REQUIRED)
 
 file(GLOB FLANN_LIBRARIES "${FLANN_LIBRARY_DIR}/libflann*.*")
 file(GLOB PCL_LIBRARIES "${PCL_LIBRARY_DIR}/libpcl_*.so*")
+file(GLOB YAML_CPP_LIBRARIES "${YAML_CPP_LIBRARY_DIR}/libyaml-cpp.a")
 set(CERES_LIBRARIES
     ${CERES_LIBRARY_DIR}/libceres.so
     ${CERES_LIBRARY_DIR}/libceres.so.1
@@ -70,7 +71,7 @@ oh_my_loam/mapper/mapper.cc
 oh_my_loam/odometer/odometer.cc
 oh_my_loam/oh_my_loam.cc)
 
-add_library(${appname}-original SHARED aloam_library.cpp)
+add_library(${appname}-original SHARED loam_library.cpp)
 install(TARGETS ${appname}  DESTINATION  lib/)
 install(TARGETS ${appname}-original  DESTINATION  lib/)
 
